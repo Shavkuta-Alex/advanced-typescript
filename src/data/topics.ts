@@ -1,6 +1,8 @@
-// data.js — Structured content for Advanced TypeScript Learning Guide
+// topics.ts — Structured content for Advanced TypeScript Learning Guide
 // All code fields store raw TypeScript (not HTML-escaped).
 // HTML tags in overview/keyConcepts are preserved for innerHTML rendering.
+
+import type { Topic, QuickRefResource, IntroContent } from '@/types';
 
 export const topics = [
   {
@@ -508,7 +510,7 @@ const dogH: Handler<Dog> = animalH; // OK - contravariant!
       { url: 'https://typehero.dev/challenge/covariance-and-contravariance', title: 'Covariance and Contravariance', difficulty: 'Hard', diffClass: 'ex-hard', source: 'TypeHero' },
       { url: 'https://github.com/type-challenges/type-challenges/blob/main/questions/00007-easy-readonly/README.md', title: 'Readonly (covariance)', difficulty: 'Easy', diffClass: 'ex-easy', source: 'Type Challenges' },
       { url: 'https://www.totaltypescript.com/workshops/type-transformations/conditional-types-and-infer/infer-with-generics', title: 'Infer with Generics (variance demo)', difficulty: 'Medium', diffClass: 'ex-medium', source: 'Total TypeScript' },
-      { url: 'https://www.typescriptlang.org/play?#code/PTAEBUAsFMCdtAQ3qALgdwPYFN5gIwCsAzRAJ2gBNIBjUAM2kIAdFaB+YVAby1AF5QAIgBGzCgEYA3EQC+RImQqotASz5IALI14ChYgDSTp0ACbNFVADb9sNcAE8ADgChjJsxfCVBF0IA', title: 'Playground: Variance Demo', difficulty: 'Medium', diffClass: 'ex-medium', source: 'TS Playground' }
+      { url: 'https://www.typescriptlang.org/play?#code/PTAEBUAsFMCdtAQ3qALgdwPYFN5gIwCsAzRAJ2gBNIBjUAM2kIAdFaB+YVAby1AF5QAIgBGzCgEYA3EQC+RImQqotASz5IARI14ChYgDSTp0ACbNFVADb9sNcAE8ADgChjJsxfCVBF0IA', title: 'Playground: Variance Demo', difficulty: 'Medium', diffClass: 'ex-medium', source: 'TS Playground' }
     ],
     hints: [
       'Think of covariance as "output" (return types) and contravariance as "input" (parameters).',
@@ -1128,7 +1130,7 @@ type Parsed = ParseJSON<'{"name": "Alice", "active": true}'>;
       'Use recursive descent parsing \u2014 each parser returns the parsed value and the remaining string.'
     ]
   }
-];
+] satisfies Topic[];
 
 export const quickRefResources = [
   { icon: '\u{1F9B8}', title: 'TypeHero', url: 'https://typehero.dev', description: 'Interactive challenges with instant feedback' },
@@ -1140,7 +1142,7 @@ export const quickRefResources = [
   { icon: '\u03BB', title: 'fp-ts', url: 'https://gcanti.github.io/fp-ts/', description: 'FP with HKT patterns' },
   { icon: '\u{1F527}', title: 'ts-toolbelt', url: 'https://github.com/millsp/ts-toolbelt', description: '200+ type utilities' },
   { icon: '\u{1F525}', title: 'HotScript', url: 'https://github.com/gvergnaud/hotscript', description: 'Type-level parsing' }
-];
+] satisfies QuickRefResource[];
 
 export const introContent = {
   text: 'This guide covers 20 advanced TypeScript type-system features, <strong>ordered by prerequisite dependencies</strong>. Each topic builds on concepts from previous ones, creating an optimal learning path from foundational patterns to expert-level type gymnastics.',
@@ -1151,4 +1153,4 @@ export const introContent = {
     'Complete Type Challenges for hands-on practice',
     'Revisit earlier topics when prerequisites are mentioned'
   ]
-};
+} satisfies IntroContent;

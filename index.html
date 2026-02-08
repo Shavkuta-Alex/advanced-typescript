@@ -1,79 +1,24 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="20 advanced TypeScript topics ordered for optimal learning — each building on previous concepts">
-  <meta property="og:title" content="Advanced TypeScript Learning Guide">
-  <meta property="og:description" content="20 essential topics ordered for optimal learning — each building on previous concepts">
-  <meta property="og:type" content="article">
-  <meta property="og:url" content="https://shavkuta-alex.github.io/advanced-typescript/">
-  <meta name="twitter:card" content="summary_large_image">
-  <title>Advanced TypeScript Learning Guide</title>
-
-  <!-- Prevent FOUC for theme -->
-  <script>
-    const t = localStorage.getItem('theme') ||
-      (matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
-    document.documentElement.dataset.theme = t;
-  </script>
-
-  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-  <link rel="stylesheet" href="styles.css">
-
-  <script type="importmap">
-  {
-    "imports": {
-      "fuse": "https://cdn.jsdelivr.net/npm/fuse.js@7.0.0/dist/fuse.mjs"
-    }
-  }
-  </script>
-</head>
-<body>
-  <div class="reading-progress" aria-hidden="true"></div>
-  <a href="#main-content" class="skip-link">Skip to content</a>
-
-  <header class="hero">
-    <h1>Advanced TypeScript</h1>
-    <p class="hero__subtitle">Learning Guide</p>
-    <p class="hero__tagline">20 essential topics ordered for optimal learning — each building on previous concepts</p>
-    <button class="theme-toggle" type="button" aria-label="Toggle theme"></button>
-  </header>
-
-  <main id="main-content" class="layout">
-    <aside class="sidebar" aria-label="Navigation">
-      <div class="search-box">
-        <input type="search" id="search-input" placeholder="Search topics... ( / )" aria-label="Search topics">
-      </div>
-      <nav class="toc" aria-label="Table of contents">
-        <h2>Contents</h2>
-        <p class="progress-text"></p>
-        <div class="progress-bar"><div class="progress-bar__fill"></div></div>
-        <ol class="toc__list" id="toc-list"></ol>
-      </nav>
-    </aside>
-
-    <div class="content">
-      <section class="intro" id="intro"></section>
-      <div id="topics-container"></div>
-      <section class="quick-ref" id="quick-ref" aria-label="Essential resources">
-        <h2>Essential Resources</h2>
-        <ul id="quick-ref-list"></ul>
-      </section>
-    </div>
-  </main>
-
-  <!-- Monaco editor modal -->
-  <dialog id="editor-modal" class="editor-modal">
-    <div class="editor-modal__header">
-      <h3 id="editor-title"></h3>
-      <button type="button" onclick="this.closest('dialog').close()" aria-label="Close editor">&times;</button>
-    </div>
-    <div id="editor-container" class="editor-modal__body"></div>
-  </dialog>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js" data-manual></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
-  <script type="module" src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="20 advanced TypeScript topics ordered for optimal learning — each building on previous concepts" />
+    <meta property="og:title" content="Advanced TypeScript Learning Guide" />
+    <meta property="og:description" content="20 essential topics ordered for optimal learning — each building on previous concepts" />
+    <meta property="og:type" content="article" />
+    <title>Advanced TypeScript Learning Guide</title>
+    <script>
+      (function() {
+        var theme = localStorage.getItem('ts-guide-theme');
+        if (theme === 'dark' || (!theme && matchMedia('(prefers-color-scheme:dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
