@@ -57,9 +57,27 @@ function reducer(state: number, action: Action): number {
 type ExtractVariant<U, T> = U extends { type: T } ? U : never;
 type IncrementAction = ExtractVariant<Action, 'INCREMENT'>;
 
+// NARROWING with 'in' operator
+type Fish = { swim(): void };
+type Bird = { fly(): void };
+function move(a: Fish | Bird) {
+  if ('swim' in a) a.swim(); // narrowed to Fish
+  else a.fly();              // narrowed to Bird
+}
+
+// NESTED DISCRIMINATED UNION
+type APIResult =
+  | { status: 'success'; data: { kind: 'user'; name: string } | { kind: 'post'; title: string } }
+  | { status: 'error'; message: string };
+
 // GENERATE DISCRIMINATED UNION FROM CONFIG
 type EventConfig = { click: { x: number; y: number }; keypress: { key: string } };
-type Event = { [K in keyof EventConfig]: { type: K } & EventConfig[K] }[keyof EventConfig];`,
+type Event = { [K in keyof EventConfig]: { type: K } & EventConfig[K] }[keyof EventConfig];
+
+// Real-world: Effect-TS generates tagged unions from config objects
+type TaggedEnum<A> = { [K in keyof A]: { readonly _tag: K } & A[K] }[keyof A];
+type AppEvent = TaggedEnum<{ Click: { x: number }; Key: { code: string } }>;
+// { _tag: 'Click'; x: number } | { _tag: 'Key'; code: string }`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/2/narrowing.html#discriminated-unions', title: 'TypeScript Handbook - Discriminated Unions', description: 'Official documentation' },
       { url: 'https://github.com/gvergnaud/ts-pattern', title: 'ts-pattern', description: 'Exhaustive pattern matching library' },
@@ -103,7 +121,7 @@ colors1.typo; // No error - any string key allowed!
 const colors2 = {
   red: [255, 0, 0], green: [0, 255, 0],
 } satisfies Record<string, [number, number, number]>;
-colors2.red;   // Type is [255, 0, 0] - literal preserved!
+colors2.red;   // Type is [number, number, number] — keys 'red'|'green' preserved!
 colors2.typo;  // Error! Only 'red' | 'green' allowed
 
 // as const for deepest literal type
@@ -115,7 +133,9 @@ const apiRoutes = {
   getUsers: '/api/users',
   getUser: '/api/users/:id',
 } as const satisfies Record<string, \`/\${string}\`>;
-// Validates AND preserves literal types!`,
+// Validates AND preserves literal types!
+
+// Real-world: Drizzle ORM — defineConfig({ dialect: "postgresql" }) satisfies Config`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html#the-satisfies-operator', title: 'TypeScript 4.9 - satisfies', description: 'Official release notes' },
       { url: 'https://www.totaltypescript.com/clarifying-the-satisfies-operator', title: 'Total TypeScript - satisfies', description: "Matt Pocock's deep dive" }
@@ -168,7 +188,9 @@ type L = Last<[1, 2, 3]>; // 3
 type ParseRoute<T> = T extends \`/\${infer Seg}/\${infer Rest}\`
   ? [Seg, ...ParseRoute<\`/\${Rest}\`>]
   : T extends \`/\${infer Seg}\` ? [Seg] : [];
-type Segments = ParseRoute<'/users/123/posts'>; // ['users', '123', 'posts']`,
+type Segments = ParseRoute<'/users/123/posts'>; // ['users', '123', 'posts']
+
+// Real-world: tRPC destructures ProcedureBuilder's 8 generic params with infer`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#inferring-within-conditional-types', title: 'TypeScript Handbook - Infer', description: 'Official documentation' },
       { url: 'https://type-level-typescript.com', title: 'Type-Level TypeScript', description: 'In-depth infer coverage' }
@@ -211,17 +233,25 @@ type Distributed = ToArray<string | number>; // string[] | number[]
 type ToArrayND<T> = [T] extends [any] ? T[] : never;
 type NonDist = ToArrayND<string | number>; // (string | number)[]
 
-// Extract/Exclude patterns
-type Extract<T, U> = T extends U ? T : never;
-type Exclude<T, U> = T extends U ? never : T;
+// Reimplements the built-in Extract/Exclude
+type MyExtract<T, U> = T extends U ? T : never;
+type MyExclude<T, U> = T extends U ? never : T;
 
-type Strings = Extract<string | number | boolean, string>; // string
-type NoStr = Exclude<string | number | boolean, string>;   // number | boolean
+type Strings = MyExtract<string | number | boolean, string>; // string
+type NoStr = MyExclude<string | number | boolean, string>;   // number | boolean
+
+// never is the empty union — distributing over it returns never
+type N = ToArray<never>; // never
 
 // Check if type is union
 type IsUnion<T, U = T> = T extends any ? [U] extends [T] ? false : true : never;
 type Test1 = IsUnion<string>;          // false
-type Test2 = IsUnion<string | number>; // true`,
+type Test2 = IsUnion<string | number>; // true
+
+// Real-world: type-fest's IsNever guard (prevents distribution over never)
+type IsNever<T> = [T] extends [never] ? true : false;
+type A = IsNever<never>;  // true
+type B = IsNever<string>; // false`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/2/conditional-types.html#distributive-conditional-types', title: 'TypeScript Handbook - Distributive Types', description: 'Official explanation' },
       { url: 'https://effectivetypescript.com', title: 'Effective TypeScript', description: 'Item 50 covers distribution in depth' }
@@ -272,9 +302,21 @@ type Combined = Concat<[1, 2], [3, 4]>; // [1, 2, 3, 4]
 type Reversed = Reverse<Nums>;     // [5, 4, 3, 2, 1]
 type Len = Nums['length'];         // 5
 
+// Labeled tuple elements
+type Point = [x: number, y: number];
+function distance(from: Point, to: Point): number {
+  return Math.hypot(to[0] - from[0], to[1] - from[1]);
+}
+
 // Tuple to Union
 type TupleToUnion<T extends any[]> = T[number];
-type Union = TupleToUnion<[1, 2, 3]>; // 1 | 2 | 3`,
+type Union = TupleToUnion<[1, 2, 3]>; // 1 | 2 | 3
+
+// Real-world: Prisma unwraps a tuple of promises to type $transaction results
+type UnwrapTuple<T extends readonly unknown[]> = {
+  [K in keyof T]: T[K] extends Promise<infer U> ? U : T[K]
+};
+// $transaction([userQuery, countQuery]) => [User[], number]`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-0.html', title: 'TypeScript 4.0 - Variadic Tuples', description: 'Feature introduction' },
       { url: 'https://github.com/type-challenges/type-challenges', title: 'Type Challenges', description: 'Tuple manipulation practice' }
@@ -335,7 +377,13 @@ type H = Handlers<{ click: MouseEvent }>; // { onClick: (e: MouseEvent) => void 
 // Split string
 type Split<S extends string, D extends string> =
   S extends \`\${infer H}\${D}\${infer T}\` ? [H, ...Split<T, D>] : [S];
-type Parts = Split<'a-b-c', '-'>; // ['a', 'b', 'c']`,
+type Parts = Split<'a-b-c', '-'>; // ['a', 'b', 'c']
+
+// Real-world: Hono extracts route params purely at the type level
+type ParamKey<T> = T extends \`:\${infer P}\` ? P : never;
+type ParamKeys<Path> = Path extends \`\${infer Seg}/\${infer Rest}\`
+  ? ParamKey<Seg> | ParamKeys<Rest> : ParamKey<Path>;
+type R = ParamKeys<'/users/:id/posts/:pid'>; // 'id' | 'pid'`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/2/template-literal-types.html', title: 'TypeScript Handbook - Template Literals', description: 'Official documentation' },
       { url: 'https://type-level-typescript.com', title: 'Type-Level TypeScript', description: 'String manipulation chapter' }
@@ -391,7 +439,9 @@ type Accessors<T> = {
   [K in keyof T as \`get\${Capitalize<string & K>}\`]: () => T[K]
 } & {
   [K in keyof T as \`set\${Capitalize<string & K>}\`]: (v: T[K]) => void
-};`,
+};
+
+// Real-world: type-fest — CamelCasedProperties<T> = { [K in keyof T as CamelCase<K>]: T[K] }`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-1.html#key-remapping-in-mapped-types', title: 'TypeScript 4.1 - Key Remapping', description: 'Feature introduction' },
       { url: 'https://www.typescriptlang.org/docs/handbook/2/mapped-types.html', title: 'TypeScript Handbook - Mapped Types', description: 'Comprehensive documentation' }
@@ -432,14 +482,19 @@ type DeepPartial<T> = T extends object ? { [P in keyof T]?: DeepPartial<T[P]> } 
 // Flatten nested arrays
 type Flatten<T> = T extends Array<infer U> ? Flatten<U> : T;
 
-// Unwrap nested Promises
-type Awaited<T> = T extends Promise<infer U> ? Awaited<U> : T;
+// Reimplements the built-in Awaited (TS 4.5+)
+type MyAwaited<T> = T extends Promise<infer U> ? MyAwaited<U> : T;
 
 // Usage
 type Nested = { a: { b: { c: string } } };
 type DP = DeepPartial<Nested>; // { a?: { b?: { c?: string } } }
 type Flat = Flatten<number[][][][]>; // number
-type Res = Awaited<Promise<Promise<string>>>; // string
+type Res = MyAwaited<Promise<Promise<string>>>; // string
+
+// Tail-call optimization with accumulator
+type Reverse<T extends any[], Acc extends any[] = []> =
+  T extends [infer H, ...infer R] ? Reverse<R, [H, ...Acc]> : Acc;
+type Rev = Reverse<[1, 2, 3]>; // [3, 2, 1]
 
 // Deep Readonly
 type DeepReadonly<T> = T extends object
@@ -448,7 +503,13 @@ type DeepReadonly<T> = T extends object
 // Collect all paths
 type Paths<T, P extends string = ''> = T extends object
   ? { [K in keyof T & string]: \`\${P}\${K}\` | Paths<T[K], \`\${P}\${K}.\`> }[keyof T & string]
-  : never;`,
+  : never;
+
+// Real-world: type-fest's ReadonlyDeep cascades over Maps, Sets, tuples, arrays
+type ReadonlyDeep<T> = T extends Map<infer K, infer V>
+  ? ReadonlyMap<ReadonlyDeep<K>, ReadonlyDeep<V>>
+  : T extends Set<infer U> ? ReadonlySet<ReadonlyDeep<U>>
+  : T extends object ? { readonly [P in keyof T]: ReadonlyDeep<T[P]> } : T;`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/2/conditional-types.html', title: 'TypeScript Handbook - Conditional Types', description: 'Official documentation' },
       { url: 'https://type-level-typescript.com', title: 'Type-Level TypeScript', description: 'Recursive types chapter' }
@@ -501,7 +562,12 @@ const dogH: Handler<Dog> = animalH; // OK - contravariant!
 
 // This is why union-to-intersection works:
 // Contravariant position collects into intersection
-// (A => void) | (B => void) in param position becomes A & B`,
+// (A => void) | (B => void) in param position becomes A & B
+
+// Real-world: Effect-TS annotates variance on core types for safety + perf
+interface Predicate<in A> { (a: A): boolean }
+interface Refinement<in A, out B extends A> { (a: A): a is B }
+// Effect<out A, out E = never, out R = never> — all covariant`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-7.html#optional-variance-annotations-for-type-parameters', title: 'TypeScript 4.7 - Variance Annotations', description: 'in/out modifiers' },
       { url: 'https://www.stephanboyer.com/post/132/what-are-covariance-and-contravariance', title: "Stephan Boyer's Article", description: 'Excellent explanation' }
@@ -550,7 +616,9 @@ type T = UTT<'a' | 'b'>; // ['a', 'b']
 
 // Merge union of objects
 type Merge<U> = { [K in keyof UnionToIntersection<U>]: UnionToIntersection<U>[K] };
-type M = Merge<{ a: 1 } | { b: 2 }>; // { a: 1; b: 2 }`,
+type M = Merge<{ a: 1 } | { b: 2 }>; // { a: 1; b: 2 }
+
+// Used in: type-fest, ts-toolbelt, and middleware/plugin type merging`,
     resources: [
       { url: 'https://github.com/type-challenges/type-challenges/blob/main/questions/00055-hard-union-to-intersection/README.md', title: 'Type Challenges - Union to Intersection', description: 'The canonical challenge' },
       { url: 'https://stackoverflow.com/questions/50374908/transform-union-type-to-intersection-type', title: 'Stack Overflow Explanation', description: 'Original detailed breakdown' }
@@ -610,7 +678,9 @@ namespace Color {
   export function parse(s: string): Color | undefined {
     return Color[s as keyof typeof Color];
   }
-}`,
+}
+
+// Real-world: NextAuth — declare module 'next-auth' { interface Session { user: { role: string } } }`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/declaration-merging.html', title: 'TypeScript Handbook - Declaration Merging', description: 'Official documentation' },
       { url: 'https://github.com/DefinitelyTyped/DefinitelyTyped', title: 'DefinitelyTyped', description: 'Real-world examples' }
@@ -661,7 +731,9 @@ export namespace API {
     export interface Create { name: string; email: string }
   }
 }
-const u: API.User = { id: '1', name: 'Alice' };`,
+const u: API.User = { id: '1', name: 'Alice' };
+
+// Real-world: Vite's client.d.ts types all asset imports with wildcard modules`,
     resources: [
       { url: 'https://www.typescriptlang.org/docs/handbook/modules.html', title: 'TypeScript Handbook - Modules', description: 'Official documentation' },
       { url: 'https://arethetypeswrong.github.io/', title: 'Are The Types Wrong?', description: 'Check package exports' }
@@ -716,7 +788,12 @@ function validateEmail(s: string): Email | null {
 function sendEmail(to: Email, subject: string) {}
 
 const email = validateEmail('a@b.com');
-if (email) sendEmail(email, 'Hello'); // Type-safe!`,
+if (email) sendEmail(email, 'Hello'); // Type-safe!
+
+// Real-world: Effect-TS brands with phantom symbol (zero-cost at runtime)
+type Branded<A, K extends string | symbol> = A & { readonly [Symbol.for('Brand')]: { readonly [k in K]: K } };
+type EUserId = Branded<string, 'UserId'>;
+// const UserId = Brand.nominal<UserId>() — constructor just returns input`,
     resources: [
       { url: 'https://type-level-typescript.com', title: 'Type-Level TypeScript - Branded Types', description: 'Nominal typing patterns' },
       { url: 'https://zod.dev', title: 'Zod', description: 'Validation with brands built-in' }
@@ -749,12 +826,13 @@ if (email) sendEmail(email, 'Hello'); // Type-safe!`,
     ],
     code: `interface Config { name: string; email: string; age?: number }
 
-type Required<T> = { [K in keyof T]-?: undefined extends T[K] ? never : K }[keyof T];
+// Extract required keys (not the built-in Required which makes all props required)
+type RequiredKeys<T> = { [K in keyof T]-?: undefined extends T[K] ? never : K }[keyof T];
 
 type Builder<T, Set extends keyof T = never> = {
   [K in keyof T as K extends Set ? never : \`set\${Capitalize<string & K>}\`]:
     (v: T[K]) => Builder<T, Set | K>
-} & (Required<T> extends Set ? { build(): T } : {});
+} & (RequiredKeys<T> extends Set ? { build(): T } : {});
 
 function createBuilder(): Builder<Config> {
   const c: Partial<Config> = {};
@@ -768,7 +846,10 @@ function createBuilder(): Builder<Config> {
 }
 
 createBuilder().setName('A').setEmail('a@b').build(); // OK
-// createBuilder().setName('A').build(); // Error - email required!`,
+// createBuilder().setName('A').build(); // Error — email required!
+// createBuilder().setName('A').setName('B'); // Error — already set!
+
+// Real-world: Kysely — each .select() returns Builder<..., O & { newCol: Type }>`,
     resources: [
       { url: 'https://github.com/type-challenges/type-challenges/blob/main/questions/00012-medium-chainable-options/README.md', title: 'Type Challenges - Chainable', description: 'Builder pattern challenge' },
       { url: 'https://kysely.dev', title: 'Kysely', description: 'Type-safe SQL query builder' }
@@ -796,8 +877,8 @@ createBuilder().setName('A').setEmail('a@b').build(); // OK
     keyConcepts: [
       'Generating all valid path strings for a nested object type',
       'Extracting the type at a given path',
-      'Handling arrays, optional properties, and nullable types',
-      'Type-safe get/set functions'
+      'Recursive template literal types for dot-notation',
+      'Type-safe get function with path autocomplete'
     ],
     code: `// Get all paths
 type Paths<T, P extends string = ''> = T extends object
@@ -822,7 +903,13 @@ function get<T, P extends Paths<T>>(o: T, p: P): PathValue<T, P> {
 
 const user: User = { name: 'A', addr: { city: 'NYC', geo: { lat: 40 } } };
 const city = get(user, 'addr.city');    // string
-const lat = get(user, 'addr.geo.lat');  // number`,
+const lat = get(user, 'addr.geo.lat');  // number
+
+// Real-world: React Hook Form tracks visited types to prevent infinite recursion
+type PathImpl<T, Seen = never> = T extends object
+  ? T extends Seen ? never
+  : { [K in keyof T & string]: K | \`\${K}.\${PathImpl<T[K], Seen | T>}\` }[keyof T & string]
+  : never;`,
     resources: [
       { url: 'https://github.com/type-challenges/type-challenges/blob/main/questions/07258-hard-object-key-paths/README.md', title: 'Type Challenges - Object Key Paths', description: 'Path generation challenge' },
       { url: 'https://react-hook-form.com', title: 'React Hook Form', description: 'Real-world path types' }
@@ -868,17 +955,26 @@ type Valid = { idle: 'FETCH'; loading: 'DONE'; done: 'RESET' | 'FETCH' };
 
 type Allowed<S extends State> = Extract<Event, { e: Valid[S['s']] }>;
 
-function transition<S extends State>(state: S, event: Allowed<S>): State {
+// Infer the next state from a transition
+type NextState = { idle: { s: 'loading'; t: number }; loading: { s: 'done'; data: string }; done: { s: 'idle' } | { s: 'loading'; t: number } };
+
+function transition<S extends State>(state: S, event: Allowed<S>): NextState[S['s']] {
   switch (state.s) {
     case 'idle': return { s: 'loading', t: Date.now() };
-    case 'loading': return { s: 'done', data: (event as any).data };
-    case 'done': return event.e === 'RESET' ? { s: 'idle' } : { s: 'loading', t: Date.now() };
+    case 'loading': {
+      const ev = event as Extract<Event, { e: 'DONE' }>; // narrowed by Allowed
+      return { s: 'done', data: ev.data };
+    }
+    case 'done': return event.e === 'RESET'
+      ? { s: 'idle' } : { s: 'loading', t: Date.now() };
   }
 }
 
 const idle: State = { s: 'idle' };
-transition(idle, { e: 'FETCH' }); // OK
-// transition(idle, { e: 'DONE', data: '' }); // Error!`,
+transition(idle, { e: 'FETCH' }); // OK — returns { s: 'loading'; t: number }
+// transition(idle, { e: 'DONE', data: '' }); // Error!
+
+// Real-world: XState v5 — setup({ types: { events: {} as Event } }).createMachine(...)`,
     resources: [
       { url: 'https://xstate.js.org', title: 'XState', description: 'Production state machine library' },
       { url: 'https://stately.ai/docs/typescript', title: 'XState TypeScript Guide', description: 'Typing state machines' }
@@ -932,7 +1028,9 @@ type R5 = Range<5>; // 0 | 1 | 2 | 3 | 4
 // Fixed-length vector
 type Vec<N extends number> = BuildTuple<N, number[]> & number[];
 type Vec3 = Vec<3>; // [number, number, number]
-const v: Vec3 = [1, 2, 3]; // OK`,
+const v: Vec3 = [1, 2, 3]; // OK
+
+// Used in: ts-arithmetic, HotScript — same tuple-length encoding for compile-time math`,
     resources: [
       { url: 'https://github.com/type-challenges/type-challenges', title: 'Type Challenges', description: 'Arithmetic challenges' },
       { url: 'https://github.com/gvergnaud/hotscript', title: 'HotScript', description: 'Type-level ops library' }
@@ -977,10 +1075,10 @@ type Curry<F> = F extends (...args: infer A) => infer R
 type Orig = (a: string, b: number, c: boolean) => void;
 type C = Curry<Orig>; // (a: string) => (a: number) => (a: boolean) => void
 
-// Partial application
-type Partial<F, A extends any[]> = F extends (...args: [...A, ...infer R]) => infer Ret
+// Partial application (not the built-in Partial which makes props optional)
+type PartialApply<F, A extends any[]> = F extends (...args: [...A, ...infer R]) => infer Ret
   ? (...args: R) => Ret : never;
-type P1 = Partial<Orig, [string]>; // (b: number, c: boolean) => void
+type P1 = PartialApply<Orig, [string]>; // (b: number, c: boolean) => void
 
 // Pipe type
 declare function pipe<A, B>(f: (a: A) => B): (a: A) => B;
@@ -991,7 +1089,9 @@ const process = pipe(
   (x: string) => x.length,
   (x: number) => x * 2,
   (x: number) => x.toString()
-); // (a: string) => string`,
+); // (a: string) => string
+
+// Real-world: fp-ts and Effect — overload-per-arity pattern (pipe has ~20 overloads)`,
     resources: [
       { url: 'https://github.com/type-challenges/type-challenges/blob/main/questions/00017-hard-currying-1/README.md', title: 'Type Challenges - Currying', description: 'Currying challenge' },
       { url: 'https://gcanti.github.io/fp-ts/modules/function.ts.html', title: 'fp-ts Function Module', description: 'Production implementations' }
@@ -1054,7 +1154,9 @@ function double<F extends URIS>(F: Functor<F>, fa: Kind<F, number>): Kind<F, num
 }
 
 double(arrayF, [1, 2, 3]);  // [2, 4, 6]
-double(optionF, some(5));   // Some(10)`,
+double(optionF, some(5));   // Some(10)
+
+// Real-world: fp-ts — each data type registers via declare module './HKT' augmentation`,
     resources: [
       { url: 'https://gcanti.github.io/fp-ts/', title: 'fp-ts', description: 'Production HKT implementation' },
       { url: 'https://effect.website', title: 'Effect-TS', description: 'Modern HKT patterns' }
@@ -1082,10 +1184,10 @@ double(optionF, some(5));   // Some(10)`,
     keyConcepts: [
       'Type-level tokenization',
       'Recursive descent parsing patterns',
-      'Handling nested structures',
+      'Building towards nested structure support',
       'Type-level state machines'
     ],
-    code: `// Simplified JSON Parser
+    code: `// Simplified JSON Parser (no nesting, arrays, or numbers — see exercises for full version)
 type Trim<S> = S extends \` \${infer R}\` | \`\\n\${infer R}\` ? Trim<R> : S;
 type ParseString<S> = S extends \`"\${infer C}"\${infer R}\` ? [C, R] : never;
 type ParseLiteral<S> = S extends \`true\${infer R}\` ? [true, R]
@@ -1112,7 +1214,9 @@ type ParseJSON<S extends string> = ParseValue<S> extends [infer R, any] ? R : ne
 
 // Usage!
 type Parsed = ParseJSON<'{"name": "Alice", "active": true}'>;
-// { name: "Alice" } & { active: true }`,
+// { name: "Alice" } & { active: true }
+
+// Real-world: jamiebuilds/json-parser-in-typescript — full parser with arrays, numbers, nesting`,
     resources: [
       { url: 'https://github.com/type-challenges/type-challenges/blob/main/questions/06228-extreme-json-parser/README.md', title: 'Type Challenges - JSON Parser', description: 'The ultimate challenge' },
       { url: 'https://github.com/gvergnaud/hotscript', title: 'HotScript', description: 'Type-level parsing utilities' }
